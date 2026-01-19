@@ -22,7 +22,19 @@ export default async function handler(req, res) {
 
   try {
     const adminKey = req.query.key || req.headers['x-admin-key'];
-    const expectedKey = process.env.ADMIN_LOG_KEY || 'change-this-secret-key';
+    const expectedKey = process.env.ADMIN_LOG_KEY;
+    
+    // Debug info (remove in production if needed)
+    if (!expectedKey) {
+      console.error('[Admin Logs] ADMIN_LOG_KEY environment variable is not set');
+      return res.status(500).json({ 
+        error: 'Server configuration error',
+        message: 'ADMIN_LOG_KEY environment variable is not set. Please add it in Vercel dashboard.'
+      });
+    }
+    
+    // Decode URL-encoded key if needed
+    const decodedKey = adminKey ? decodeURIComponent(adminKey) : null;
     
     if (adminKey !== expectedKey) {
       return res.status(401).json({ error: 'Unauthorized' });

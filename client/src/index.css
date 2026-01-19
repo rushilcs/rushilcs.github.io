@@ -216,3 +216,16 @@ section {
 ::-webkit-scrollbar{
   display:none
 }
+
+/* Custom image positioning for About Me section - force override */
+#about-rushil [role="img"][aria-label="Rushil Chandrupatla"],
+#about-rushil div[style*="backgroundImage"] {
+  background-position: 58% center !important;
+  background-size: cover !important;
+}
+
+/* More aggressive override for the profile image container */
+#about-rushil > div > div > div > div[role="img"] {
+  background-position: 58% center !important;
+  background-size: cover !important;
+}

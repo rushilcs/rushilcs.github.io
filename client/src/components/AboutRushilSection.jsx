@@ -24,12 +24,17 @@ export const AboutRushilSection = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full border border-border/50 overflow-hidden">
-            <img 
-              src="/pfp.jpg" 
-              alt="Rushil Chandrupatla" 
-              className="w-full h-full object-cover"
-              style={{ objectPosition: '58% center' }}
+          <div className="w-64 h-64 sm:w-80 sm:h-80 rounded-full border border-border/50 overflow-hidden relative">
+            <div 
+              className="w-full h-full bg-cover bg-no-repeat"
+              style={{ 
+                backgroundImage: 'url(/pfp.jpg)',
+                backgroundPosition: '58% center',
+                backgroundSize: 'cover',
+                transform: 'scale(1.065) translateX(2.75%) translateY(2%)'
+              }}
+              role="img"
+              aria-label="Rushil Chandrupatla"
             />
           </div>
         </motion.div>
