@@ -84,26 +84,28 @@ export const WorkLedgerSection = () => {
   const scrollToModelCard = (anchor, modelCardId) => {
     if (!anchor || !modelCardId) return;
     
-    // Immediately find element and calculate position
-    const element = document.querySelector(anchor);
-    if (!element) return;
+    // First, expand the card immediately
+    window.dispatchEvent(new CustomEvent('expandModelCard', { 
+      detail: { cardId: modelCardId, skipAutoScroll: true } 
+    }));
     
-    // Calculate position immediately while element is stable
-    const rect = element.getBoundingClientRect();
-    const absoluteTop = rect.top + (window.scrollY || window.pageYOffset);
-    const yOffset = 100; // Navbar (80px) + padding (20px)
-    const scrollY = absoluteTop - yOffset;
-    
-    // Start scroll immediately
-    fastScrollTo(scrollY, 200);
-    
-    // Dispatch custom event to expand the card with skipAutoScroll flag
-    // This prevents the duplicate scroll from the expansion handler
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('expandModelCard', { 
-        detail: { cardId: modelCardId, skipAutoScroll: true } 
-      }));
-    }, 250);
+    // Wait for expansion animation to complete, then scroll to correct position
+    // Use requestAnimationFrame to start as soon as possible
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const element = document.querySelector(anchor);
+        if (!element) return;
+        
+        // Calculate position after card has expanded
+        const rect = element.getBoundingClientRect();
+        const absoluteTop = rect.top + (window.scrollY || window.pageYOffset);
+        const yOffset = 100; // Navbar (80px) + padding (20px)
+        const scrollY = absoluteTop - yOffset;
+        
+        // Scroll to the expanded card position
+        fastScrollTo(scrollY, 200);
+      }, 150); // Start scroll during expansion animation (halfway through 300ms animation)
+    });
   };
 
   const scrollToWorkLedger = () => {

@@ -165,26 +165,28 @@ export const ConceptsPortfolio = () => {
   };
 
   const scrollToWorkLedger = (companyId) => {
-    // Immediately stop any ongoing scrolls and calculate position
-    const companyElement = document.querySelector(`#work-ledger-company-${companyId}`);
-    if (!companyElement) return;
+    // First, expand the card immediately
+    window.dispatchEvent(new CustomEvent('expandWorkLedgerCompany', { 
+      detail: { companyId, skipAutoScroll: true } 
+    }));
     
-    // Calculate position immediately while element is stable
-    const rect = companyElement.getBoundingClientRect();
-    const absoluteTop = rect.top + (window.scrollY || window.pageYOffset);
-    const yOffset = 100; // Navbar (80px) + padding (20px)
-    const scrollY = absoluteTop - yOffset;
-    
-    // Start scroll immediately
-    fastScrollTo(scrollY, 200);
-    
-    // Dispatch event to expand the company card with skipAutoScroll flag
-    // This prevents the duplicate scroll from the expansion handler
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('expandWorkLedgerCompany', { 
-        detail: { companyId, skipAutoScroll: true } 
-      }));
-    }, 250);
+    // Wait for expansion animation to complete, then scroll to correct position
+    // Use requestAnimationFrame to start as soon as possible
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const companyElement = document.querySelector(`#work-ledger-company-${companyId}`);
+        if (!companyElement) return;
+        
+        // Calculate position after card has expanded
+        const rect = companyElement.getBoundingClientRect();
+        const absoluteTop = rect.top + (window.scrollY || window.pageYOffset);
+        const yOffset = 100; // Navbar (80px) + padding (20px)
+        const scrollY = absoluteTop - yOffset;
+        
+        // Scroll to the expanded card position
+        fastScrollTo(scrollY, 200);
+      }, 150); // Start scroll during expansion animation (halfway through 300ms animation)
+    });
   };
 
   // Handle audience change animation

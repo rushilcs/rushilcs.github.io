@@ -1,5 +1,6 @@
 // Vercel Serverless Function for Chatbot
 import { chatWithRushil } from './helpers.js';
+import { logChatbot } from './logger.js';
 
 export default async function handler(req, res) {
   // Set CORS headers
@@ -29,11 +30,29 @@ export default async function handler(req, res) {
 
     const response = await chatWithRushil(message, conversationHistory || []);
 
+    // Log the interaction (async, don't await - don't block response)
+    logChatbot({
+      message,
+      conversationHistory: conversationHistory || [],
+      response,
+      metadata: {},
+    }).catch(err => console.error('[API] Logging error (non-blocking):', err));
+
     return res.status(200).json({
       response,
     });
   } catch (error) {
     console.error('Error in chatbot:', error);
+    
+    // Log the error (async, don't await - don't block response)
+    logChatbot({
+      message: req.body?.message || 'unknown',
+      conversationHistory: req.body?.conversationHistory || [],
+      response: null,
+      metadata: {},
+      error: error.message || 'Unknown error',
+    }).catch(err => console.error('[API] Logging error (non-blocking):', err));
+    
     return res.status(500).json({ 
       error: 'Failed to process chat message',
       message: error.message 
