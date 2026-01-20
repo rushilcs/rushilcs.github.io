@@ -2,7 +2,6 @@
 // This endpoint generates a 90-day plan using LLM analysis
 
 import { generate90DayPlan, analyzeJobFit, scrapeJobDescription } from './helpers.js';
-import { logPlanGenerator } from './logger.js';
 
 // For Vercel, we export a default async function that receives req and res
 export default async function handler(req, res) {
@@ -69,26 +68,6 @@ export default async function handler(req, res) {
       tokens: { input: 0, output: 0, total: 0 }
     };
 
-    // Determine if original input was a URL (before scraping)
-    const originalJobDesc = req.body.jobDescription;
-    const wasUrl = originalJobDesc?.trim().startsWith('http://') || originalJobDesc?.trim().startsWith('https://');
-
-    // Log the interaction (async, don't await - don't block response)
-    console.log('[API] About to call logPlanGenerator...');
-    logPlanGenerator({
-      companyName,
-      jobDescription,
-      isUrl: wasUrl,
-      plan,
-      jobFit,
-      metadata,
-    }).catch(err => {
-      console.error('[API] Logging error (non-blocking):', err);
-      console.error('[API] Logging error details:', err.message);
-      console.error('[API] Logging error stack:', err.stack);
-    });
-    console.log('[API] logPlanGenerator call initiated (async)');
-
     return res.status(200).json({
       plan,
       jobFit,
@@ -96,18 +75,6 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('Error analyzing company:', error);
-    
-    // Log the error (async, don't await - don't block response)
-    logPlanGenerator({
-      companyName: req.body?.companyName || 'unknown',
-      jobDescription: req.body?.jobDescription || 'unknown',
-      isUrl: false,
-      plan: null,
-      jobFit: null,
-      metadata: null,
-      error: error.message || 'Unknown error',
-    }).catch(err => console.error('[API] Logging error (non-blocking):', err));
-    
     return res.status(500).json({ 
       error: 'Failed to analyze company',
       message: error.message 

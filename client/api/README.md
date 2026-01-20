@@ -1,101 +1,54 @@
-# Company Analysis API
+# API Documentation
 
-This API endpoint analyzes companies based on public signals and job descriptions to generate personalized ML engineer 90-day plans.
+Serverless API endpoints for the portfolio website, deployed on Vercel.
 
-## Setup
+## Endpoints
 
-### Environment Variables
+### POST `/api/analyze-company`
 
-Create a `.env.local` file in the root directory with:
+Generates a personalized 90-day plan for ML engineering roles based on company and job description analysis.
 
-```bash
-# Optional: OpenAI API Key for LLM-powered analysis
-OPENAI_API_KEY=sk-...
-
-# OR
-
-# Optional: Anthropic API Key for LLM-powered analysis
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Optional: Custom API URL (if deploying API separately)
-VITE_API_URL=https://your-api-url.com/api/analyze-company
-```
-
-### Without LLM API Keys
-
-The API will fall back to intelligent heuristics based on:
-- Job description keyword analysis
-- Tech stack extraction
-- Pattern matching for ML maturity signals
-
-While less powerful than LLM-generated plans, this provides a working demo.
-
-## Deployment
-
-### Vercel (Recommended)
-
-1. The `api/analyze-company.js` file is automatically detected as a serverless function
-2. Add environment variables in Vercel dashboard: Settings → Environment Variables
-3. Deploy via GitHub integration or `vercel deploy`
-
-### Alternative: External API Service
-
-If deploying elsewhere (e.g., GitHub Pages), you can:
-
-1. Host the API separately (e.g., Railway, Render, Fly.io)
-2. Set `VITE_API_URL` environment variable to point to your API
-3. Update `vite.config.js` to proxy API requests during development
-
-## API Endpoint
-
-**POST** `/api/analyze-company`
-
-### Request Body
-
+**Request:**
 ```json
 {
-  "companyName": "Stripe",
-  "jobDescription": "Senior ML Engineer at Stripe..."
+  "companyName": "Company Name",
+  "jobDescription": "Job description text or URL"
 }
 ```
 
-### Response
-
+**Response:**
 ```json
 {
-  "weakSignals": [
-    "Mentions of production systems suggests operational ML maturity",
-    "Tech stack mentioned: pytorch, kubernetes, aws"
-  ],
-  "inferences": {
-    "mlMaturity": "Advanced",
-    "infraComplexity": "High",
-    "likelyChallenges": "Managing technical debt at scale..."
-  },
-  "plan": "## First 30 Days: Understanding and Mapping\n\n1. Map the ML infrastructure..."
+  "plan": "Generated 90-day plan...",
+  "jobFit": "Analysis of job fit...",
+  "metadata": {
+    "latency": 25000,
+    "model": "gpt-4",
+    "tokens": { "input": 1500, "output": 2000, "total": 3500 }
+  }
 }
 ```
 
-## Features
+### POST `/api/chatbot`
 
-### Weak-Signal Aggregation
-- Analyzes job description for keywords and patterns
-- Extracts tech stack mentions
-- Identifies ML maturity indicators
+Interactive chatbot for answering questions about projects and experience.
 
-### Structured Inference
-- ML Maturity Level (Early/Intermediate/Advanced)
-- Infrastructure Complexity (Low/Medium/High)
-- Likely Challenges identification
+**Request:**
+```json
+{
+  "message": "User message",
+  "conversationHistory": []
+}
+```
 
-### LLM-Powered Planning
-- Generates personalized 90-day plans using GPT-4 or Claude
-- Demonstrates strategic thinking and tradeoff understanding
-- Context-aware recommendations
+**Response:**
+```json
+{
+  "response": "Chatbot response..."
+}
+```
 
-## Future Enhancements
+## Configuration
 
-- Web scraping for actual blog posts and job ads
-- Integration with company APIs (LinkedIn, GitHub)
-- Caching for repeated company analyses
-- Rate limiting and authentication
+Set environment variables in Vercel:
+- `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` for LLM features

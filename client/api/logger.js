@@ -1,30 +1,12 @@
 // Database-based logging using Vercel Postgres
-import { neon } from "@neondatabase/serverless";
-
-// Check if DATABASE_URL is set
-if (!process.env.DATABASE_URL) {
-  console.error('[Logger] CRITICAL: DATABASE_URL environment variable is not set!');
-  console.error('[Logger] Please set DATABASE_URL in Vercel dashboard under Settings > Environment Variables');
-}
-
-const sql = neon(process.env.DATABASE_URL || '');
-
+import { sql } from '@vercel/postgres';
 
 /**
  * Initialize database tables (run once)
  * This is safe to call multiple times - it won't recreate existing tables
  */
 export async function initLogTables() {
-  console.log('[Logger] initLogTables called');
-  console.log('[Logger] DATABASE_URL exists:', !!process.env.DATABASE_URL);
-  
-  if (!process.env.DATABASE_URL) {
-    console.error('[Logger] Cannot initialize tables: DATABASE_URL is not set');
-    throw new Error('DATABASE_URL is not set');
-  }
-  
   try {
-    console.log('[Logger] Creating plan_generator_logs table...');
     // Create plan_generator_logs table
     await sql`
       CREATE TABLE IF NOT EXISTS plan_generator_logs (
@@ -42,9 +24,7 @@ export async function initLogTables() {
         error TEXT
       )
     `;
-    console.log('[Logger] plan_generator_logs table created/verified');
 
-    console.log('[Logger] Creating chatbot_logs table...');
     // Create chatbot_logs table
     await sql`
       CREATE TABLE IF NOT EXISTS chatbot_logs (
@@ -59,22 +39,15 @@ export async function initLogTables() {
         error TEXT
       )
     `;
-    console.log('[Logger] chatbot_logs table created/verified');
 
-    console.log('[Logger] Creating indexes...');
     // Create indexes for faster queries
     await sql`CREATE INDEX IF NOT EXISTS idx_plan_logs_timestamp ON plan_generator_logs(timestamp DESC)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_chatbot_logs_timestamp ON chatbot_logs(timestamp DESC)`;
-    console.log('[Logger] Indexes created/verified');
 
-    console.log('[Logger] Database tables initialized successfully');
+    console.log('[Logger] Database tables initialized');
   } catch (error) {
     console.error('[Logger] Error initializing tables:', error);
-    console.error('[Logger] Error message:', error.message);
-    console.error('[Logger] Error code:', error.code);
-    console.error('[Logger] Error stack:', error.stack);
     // Don't throw - allow app to continue even if tables already exist
-    // But log it so we can debug
   }
 }
 
@@ -82,33 +55,11 @@ export async function initLogTables() {
  * Log a plan generator interaction
  */
 export async function logPlanGenerator(data) {
-  console.log('[Logger] ===== logPlanGenerator START =====');
-  console.log('[Logger] DATABASE_URL set:', !!process.env.DATABASE_URL);
-  console.log('[Logger] logPlanGenerator called with:', {
-    hasCompanyName: !!data.companyName,
-    hasJobDescription: !!data.jobDescription,
-    hasPlan: !!data.plan,
-    hasJobFit: !!data.jobFit,
-    isUrl: data.isUrl,
-    planLength: data.plan?.length || 0,
-  });
-  
-  if (!process.env.DATABASE_URL) {
-    console.error('[Logger] Cannot log: DATABASE_URL is not set');
-    return;
-  }
-  
   try {
     // Ensure tables exist (idempotent)
-    console.log('[Logger] Calling initLogTables...');
     await initLogTables();
-    console.log('[Logger] Tables initialized/verified');
 
-    // Prepare metadata as JSONB-compatible object
-    const metadataJson = data.metadata || {};
-    console.log('[Logger] Prepared metadata, about to insert into database...');
-
-    const result = await sql`
+    await sql`
       INSERT INTO plan_generator_logs (
         company_name,
         job_description,
@@ -129,22 +80,14 @@ export async function logPlanGenerator(data) {
         ${data.plan?.length || 0},
         ${data.jobFit || null},
         ${data.jobFit?.length || 0},
-        ${JSON.stringify(metadataJson)}::jsonb,
+        ${JSON.stringify(data.metadata || {})},
         ${data.error || null}
       )
     `;
 
-    console.log('[Logger] ✅ INSERT SUCCESSFUL!');
-    console.log('[Logger] Plan generator log saved to database successfully. Rows affected:', result?.rowCount || 'unknown');
-    console.log('[Logger] Result object:', JSON.stringify(result, null, 2));
+    console.log('[Logger] Plan generator log saved to database');
   } catch (error) {
-    console.error('[Logger] ❌ ERROR during database operation');
     console.error('[Logger] Error logging plan generator:', error);
-    console.error('[Logger] Error message:', error.message);
-    console.error('[Logger] Error code:', error.code);
-    console.error('[Logger] Error name:', error.name);
-    console.error('[Logger] Error stack:', error.stack);
-    console.error('[Logger] Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     // Don't throw - logging failures shouldn't break the API
   }
 }
@@ -153,30 +96,11 @@ export async function logPlanGenerator(data) {
  * Log a chatbot interaction
  */
 export async function logChatbot(data) {
-  console.log('[Logger] ===== logChatbot START =====');
-  console.log('[Logger] DATABASE_URL set:', !!process.env.DATABASE_URL);
-  console.log('[Logger] logChatbot called with:', {
-    hasMessage: !!data.message,
-    hasResponse: !!data.response,
-    conversationHistoryLength: data.conversationHistory?.length || 0,
-  });
-  
-  if (!process.env.DATABASE_URL) {
-    console.error('[Logger] Cannot log: DATABASE_URL is not set');
-    return;
-  }
-  
   try {
     // Ensure tables exist (idempotent)
-    console.log('[Logger] Calling initLogTables for chatbot...');
     await initLogTables();
-    console.log('[Logger] Tables initialized/verified for chatbot');
 
-    // Prepare metadata as JSONB-compatible object
-    const metadataJson = data.metadata || {};
-    console.log('[Logger] Prepared metadata, about to insert chatbot log into database...');
-
-    const result = await sql`
+    await sql`
       INSERT INTO chatbot_logs (
         message,
         message_length,
@@ -191,22 +115,14 @@ export async function logChatbot(data) {
         ${data.conversationHistory?.length || 0},
         ${data.response || null},
         ${data.response?.length || 0},
-        ${JSON.stringify(metadataJson)}::jsonb,
+        ${JSON.stringify(data.metadata || {})},
         ${data.error || null}
       )
     `;
 
-    console.log('[Logger] ✅ INSERT SUCCESSFUL!');
-    console.log('[Logger] Chatbot log saved to database successfully. Rows affected:', result?.rowCount || 'unknown');
-    console.log('[Logger] Result object:', JSON.stringify(result, null, 2));
+    console.log('[Logger] Chatbot log saved to database');
   } catch (error) {
-    console.error('[Logger] ❌ ERROR during database operation');
     console.error('[Logger] Error logging chatbot:', error);
-    console.error('[Logger] Error message:', error.message);
-    console.error('[Logger] Error code:', error.code);
-    console.error('[Logger] Error name:', error.name);
-    console.error('[Logger] Error stack:', error.stack);
-    console.error('[Logger] Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     // Don't throw - logging failures shouldn't break the API
   }
 }
